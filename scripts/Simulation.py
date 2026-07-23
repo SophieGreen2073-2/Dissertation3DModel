@@ -36,25 +36,17 @@ class Simulation():
             record_time = RecordTime()
             record_redundancy = RecordRedundancy()
 
+            signals = self.sim.getStringSignal(None)
+            print("Active signals:", signals)
+
             while self.sim.getSimulationState() != self.sim.simulation_stopped:
                 self.sim_time = self.sim.getSimulationTime()
 
                 for uav in self.UAVs:
-                    # Update drone position
-                    current_pos = self.sim.getObjectPosition(uav.drone_base)
-                    uav.pos = current_pos
-
+                    uav.get_lidar_points()
                     if uav.current_path:
-                        next_wp = uav.current_path[0]
-
-                        # Send target to next waypoint
-                        self.sim.setObjectPosition(uav.drone_target, -1, [next_wp[0], next_wp[1], next_wp[2]])
-
-                        # Check if drone reached waypoint
-                        distance = ((current_pos[0] - next_wp[0])**2 + (current_pos[1] - next_wp[1])**2 + (current_pos[2] - next_wp[2])**2)**0.5
-
-                        if distance < 0.2:
-                            uav.current_path.pop(0)
+                        uav.step_robot()
+                    
 
 
             # while(True):
@@ -74,6 +66,7 @@ class Simulation():
             # record_redundancy.record_overlap(self.area.overlap_area, num_uavs, self.UAVParams)
 
             # sim.stopSimulation()
+        
 
     # Get simulation parameters
     def GetParams(self):
@@ -129,6 +122,6 @@ class Simulation():
                         self.UAVParams["Acceleration"], self.UAVParams["BatteryLife"],
                         self.UAVParams["ChargeTime"], len(self.UAVParams) + self.startRobotIDs,
                         alias, drone_base, drone_target, [], self.Grid["Width"],
-                        self.Grid["Height"])
+                        self.Grid["Height"], self.sim)
 
             self.UAVs.append(uav)

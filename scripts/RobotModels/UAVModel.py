@@ -1,4 +1,5 @@
 import numpy as np
+import struct
 
 class UAVModel():
     def __init__(self, x, y, z, top_speed, danger_speed, start_speed,
@@ -44,6 +45,22 @@ class UAVModel():
         self.belief_grid = np.full((self.width, self.height), 0.5, dtype=np.float32)
 
 
+    # Move robot into next position
+    def step_robot(self):
+        next_wp = self.current_path[0]
+        
+        # Send target to next waypoint
+        self.sim.setObjectPosition(self.drone_target, -1, [next_wp[0], next_wp[1], next_wp[2]])
+
+        # Check if drone reached waypoint
+        distance = ((self.pos[0] - next_wp[0])**2 + (self.pos[1] - next_wp[1])**2 + (self.pos[2] - next_wp[2])**2)**0.5
+
+        if distance < 0.2:
+            self.current_path.pop(0)
+
+        self.get_lidar_points()
+
+
     # Convert world coordinates into grid belief position
     def world_to_grid(self, wx, wy):
         gx = int((wx - self.x_min) / self.resolution)
@@ -55,17 +72,20 @@ class UAVModel():
     def get_lidar_points(self):
         signal_name = f"lidar_data_{self.drone_base}"
 
-        try:
-            raw_data = self.sim.getFloatArrayFromSignal(signal_name)
-            if raw_data is None:
-                return []
-
-            # Reshape into list of 3D points [[x, y, z], ...]
-            points = [raw_data[i:i+3] for i in range(0, len(raw_data), 3)]
-            return points
-
-        except Exception:
+        # try:
+        raw_buffer = self.sim.getStringSignal(signal_name)
+        if raw_buffer is None:
             return []
+
+        # Reshape into list of 3D points [[x, y, z], ...]
+        num_floats = len(raw_buffer) // 4
+        floats = struct.unpack(f'{num_floats}f', raw_buffer)
+        
+        # 3. Group into [x, y, z] points
+        points = [[floats[i], floats[i+1], floats[i+2]] for i in range(0, len(floats), 3)]
+        return points
+        # except Exception:
+            # return []
 
 
     # Basic yamauchi move (move to the closest free square, no search for frontiers)
