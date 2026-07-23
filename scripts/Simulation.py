@@ -36,9 +36,6 @@ class Simulation():
             record_time = RecordTime()
             record_redundancy = RecordRedundancy()
 
-            signals = self.sim.getStringSignal(None)
-            print("Active signals:", signals)
-
             while self.sim.getSimulationState() != self.sim.simulation_stopped:
                 self.sim_time = self.sim.getSimulationTime()
 

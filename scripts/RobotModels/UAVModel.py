@@ -70,7 +70,7 @@ class UAVModel():
 
     # Get LiDAR point cloud from CopelliaSim
     def get_lidar_points(self):
-        signal_name = f"lidar_data_{self.drone_base}"
+        signal_name = f"measuredDataAtThisTime"
 
         # try:
         raw_buffer = self.sim.getStringSignal(signal_name)
